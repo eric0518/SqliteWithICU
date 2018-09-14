@@ -1,11 +1,3 @@
-//
-//  mmicu_tokenizer.c
-//  Tokenizer
-//
-//  Created by wzm on 2018/9/5.
-//  Copyright © 2018 wzm. All rights reserved.
-//
-
 #include "mmicu_tokenizer.h"
 #include <string.h>
 #include <stdlib.h>
@@ -67,17 +59,13 @@ static void trim(char *str);
 
 static char *generate_token_printable_code(const UChar *buf, int32_t length);
 
-
-//#pragma mark - TEST
 /*printer used in test*/
 void printEachForward(UBreakIterator *, UChar *);
 void printTextRange(UChar *str, int32_t start, int32_t end);
 
 
-//#pragma mark - 初始化
-
 /**
- 初始化分词器
+ Init Tokenizer
  */
 int fts5_mmicuCreate(void *pCtx, const char **azArg, int nArg, Fts5Tokenizer **ppOut) {
     mm_tokenizer_t *tok = sqlite3_malloc(sizeof(mm_tokenizer_t));
@@ -96,14 +84,14 @@ int fts5_mmicuCreate(void *pCtx, const char **azArg, int nArg, Fts5Tokenizer **p
 
 
 /**
- 删除缓存的分词器
+ Delete cached Tokenizer
  */
 void fts5_mmicuDelete(Fts5Tokenizer *pTok) {
     sqlite3_free(pTok);
 }
 
 /**
- 分词
+ Do Token
  */
 int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
                         void *pCtx,
@@ -175,7 +163,8 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
     int i_output = 0;
     cur->in_offset[i_output] = i_input;
     
-    for (; ;) {
+    for (; ;) 
+	{
         if (i_input >= nText)
             break;
         
@@ -187,10 +176,10 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
         
         int is_error = 0;
         U16_APPEND(cur->in_buffer, i_output, dst_len, c, is_error);
-        if (is_error) {
+        if (is_error) 
+		{
             sqlite3_free(cur);
-            sqlite3_mm_set_last_error(
-                                      "Writing UTF-16 character failed. Code point: 0x%x", c);
+            sqlite3_mm_set_last_error("Writing UTF-16 character failed. Code point: 0x%x", c);
             
 			// ==========================================
 			// added by Eric
@@ -205,10 +194,9 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
     //break by 'word'
     cur->iter = ubrk_open(UBRK_CHARACTER, tok->locale, cur->in_buffer, i_output, &status);
     
-    if (U_FAILURE(status)) {
-        sqlite3_mm_set_last_error(
-                                  "Open UBreakIterator failed. ICU error code: %d",
-                                  status);
+    if (U_FAILURE(status)) 
+	{
+        sqlite3_mm_set_last_error("Open UBreakIterator failed. ICU error code: %d", status);
         
 		// ==========================================
 		// added by Eric
@@ -232,33 +220,39 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
     int iEndOffset = 0;
     
     int rc = SQLITE_OK;
-    while (iEndOffset < nText) {
+    while (iEndOffset < nText) 
+	{
         int output_token_flag = UN_OUTPUT_TOKEN;
         // process pending ideographic token.
-        if (find_splited_ideo_token(cur, &start, &end)) {
-            output_token_flag = output_token(cur, start, end, &pToken, &nBytes, &iStartOffset,
-                                             &iEndOffset, &iPosition);
+        if (find_splited_ideo_token(cur, &start, &end)) 
+		{
+            output_token_flag = output_token(cur, start, end, &pToken, &nBytes, &iStartOffset, &iEndOffset, &iPosition);
         }
         
         // if not output_token
-        if (UN_OUTPUT_TOKEN == output_token_flag) {
+        if (UN_OUTPUT_TOKEN == output_token_flag) 
+		{
             start = ubrk_current(cur->iter);
             
             // find first non-NONE token.
-            for (; ;) {
+            for (; ;) 
+			{
                 end = ubrk_next(cur->iter);
-                if (end == UBRK_DONE) {
+                if (end == UBRK_DONE) 
+				{
                     sqlite3_mm_clear_error();
                     rc = SQLITE_DONE;
                     goto end_to_return;
                 }
                 
                 token_type = ubrk_getRuleStatus(cur->iter);
-                if (token_type >= UBRK_WORD_NONE && token_type < UBRK_WORD_NONE_LIMIT) {
+                if (token_type >= UBRK_WORD_NONE && token_type < UBRK_WORD_NONE_LIMIT) 
+				{
                     // look at the first character, if it's a space or ZWSP, ignore this token.
                     // also ignore '*' because sqlite parser uses it as prefix operator.
                     UChar32 c = cur->in_buffer[start];
-                    if (c == '*' || c == 0x200b || u_isspace(c)) {
+                    if (c == '*' || c == 0x200b || u_isspace(c)) 
+					{
                         start = end;
                         continue;
                     }
@@ -269,15 +263,16 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
             
             // for non-IDEO tokens, just return.
             if (token_type < UBRK_WORD_IDEO || token_type >= UBRK_WORD_IDEO_LIMIT)
-                output_token_flag = output_token(cur, start, end, &pToken, &nBytes, &iStartOffset,
-                                                 &iEndOffset, &iPosition);
+                output_token_flag = output_token(cur, start, end, &pToken, &nBytes, &iStartOffset, &iEndOffset, &iPosition);
             
         }
         
         // if not output_token
-        if (UN_OUTPUT_TOKEN == output_token_flag) {
+        if (UN_OUTPUT_TOKEN == output_token_flag) 
+		{
             // for IDEO tokens, find all suffix ideo tokens.
-            for (; ;) {
+            for (; ;) 
+			{
                 int32_t e = ubrk_next(cur->iter);
                 if (e == UBRK_DONE)
                     break;
@@ -292,8 +287,7 @@ int fts_mmicu_Tokenize(Fts5Tokenizer *pTokenizer,
             cur->ideo_end = end;
             cur->ideo_state = 0;
             if (find_splited_ideo_token(cur, &start, &end))
-                output_token(cur, start, end, &pToken, &nBytes, &iStartOffset, &iEndOffset,
-                             &iPosition);
+                output_token(cur, start, end, &pToken, &nBytes, &iStartOffset, &iEndOffset, &iPosition);
         }
         
         rc = xToken(pCtx, 0, pToken, nBytes, iStartOffset, iEndOffset);
@@ -317,16 +311,16 @@ end_to_return:
 }
 
 
-#pragma mark - Private
-
-static int find_splited_ideo_token(mm_cursor_t *cur, int32_t *start, int32_t *end) {
+static int find_splited_ideo_token(mm_cursor_t *cur, int32_t *start, int32_t *end) 
+{
     int32_t s = 0, e = 0;
     UChar32 c = 0;
     
     if (cur->ideo_state < 0)
         return 0;
     
-    if (cur->ideo_start == cur->ideo_end) {
+    if (cur->ideo_start == cur->ideo_end) 
+	{
         cur->ideo_state = -1;
         return 0;
     }
@@ -351,7 +345,8 @@ static int output_token(mm_cursor_t *cur,
                  int *pnBytes,
                  int *piStartOffset,
                  int *piEndOffset,
-                 int *piPosition) {
+                 int *piPosition) 
+{
     
     UChar buf1[256];
     UChar buf2[256];
@@ -362,32 +357,29 @@ static int output_token(mm_cursor_t *cur,
     length = end - start;
     if (length > 256)
         length = 256;
-    result = unorm_normalize(cur->in_buffer + start, length, UNORM_NFKD, 0,
-                             buf1, sizeof(buf1) / sizeof(UChar), &status);
+    result = unorm_normalize(cur->in_buffer + start, length, UNORM_NFKD, 0, buf1, sizeof(buf1) / sizeof(UChar), &status);
     // currently, only try fixed length buffer, failed if overflowed.
-    if (U_FAILURE(status) || result > sizeof(buf1) / sizeof(UChar)) {
+    if (U_FAILURE(status) || result > sizeof(buf1) / sizeof(UChar)) 
+	{
         char *seq = generate_token_printable_code(cur->in_buffer + start, length);
-        sqlite3_mm_set_last_error(
-                                  "Normalize token failed. ICU status: %d, input: %s",
-                                  status, seq);
+        sqlite3_mm_set_last_error("Normalize token failed. ICU status: %d, input: %s", status, seq);
         free(seq);
         return SQLITE_ERROR;
     }
     
     length = result;
-    result = u_strFoldCase(buf2, sizeof(buf2) / sizeof(UChar), buf1, length, U_FOLD_CASE_DEFAULT,
-                           &status);
+    result = u_strFoldCase(buf2, sizeof(buf2) / sizeof(UChar), buf1, length, U_FOLD_CASE_DEFAULT, &status);
     // currently, only try fixed length buffer, failed if overflowed.
-    if (U_FAILURE(status) || result > sizeof(buf2) / sizeof(UChar)) {
+    if (U_FAILURE(status) || result > sizeof(buf2) / sizeof(UChar)) 
+	{
         char *seq = generate_token_printable_code(buf1, length);
-        sqlite3_mm_set_last_error(
-                                  "FoldCase token failed. ICU status: %d, input: %s",
-                                  status, seq);
+        sqlite3_mm_set_last_error("FoldCase token failed. ICU status: %d, input: %s", status, seq);
         free(seq);
         return SQLITE_ERROR;
     }
     
-    if (cur->out_buffer == NULL) {
+    if (cur->out_buffer == NULL) 
+	{
         cur->out_buffer =
         (char *) sqlite3_malloc(MINIMAL_OUT_BUFFER_LENGTH * sizeof(char));
         if (!cur->out_buffer)
@@ -397,7 +389,8 @@ static int output_token(mm_cursor_t *cur,
     
     length = result;
     u_strToUTF8(cur->out_buffer, cur->out_length, &result, buf2, length, &status);
-    if (result > cur->out_length) {
+    if (result > cur->out_length) 
+	{
         char *b = (char *) sqlite3_realloc(cur->out_buffer, result * sizeof(char));
         if (!b)
             return SQLITE_NOMEM;
@@ -406,14 +399,12 @@ static int output_token(mm_cursor_t *cur,
         cur->out_length = result;
         
         status = U_ZERO_ERROR;
-        u_strToUTF8(cur->out_buffer, cur->out_length, &result, buf2, length,
-                    &status);
+        u_strToUTF8(cur->out_buffer, cur->out_length, &result, buf2, length, &status);
     }
-    if (U_FAILURE(status) || result > cur->out_length) {
+    if (U_FAILURE(status) || result > cur->out_length) 
+	{
         char *seq = generate_token_printable_code(buf2, length);
-        sqlite3_mm_set_last_error(
-                                  "Transform token to UTF-8 failed. ICU status: %d, input: %s",
-                                  status, seq);
+        sqlite3_mm_set_last_error("Transform token to UTF-8 failed. ICU status: %d, input: %s", status, seq);
         free(seq);
         return SQLITE_ERROR;
     }
@@ -429,8 +420,10 @@ static int output_token(mm_cursor_t *cur,
     return SQLITE_OK;
 }
 
-static void trim(char *str) {
-    if (str == NULL || *str == '\0') {
+static void trim(char *str) 
+{
+    if (str == NULL || *str == '\0') 
+	{
         return;
     }
     
@@ -441,26 +434,30 @@ static void trim(char *str) {
     start = str;
     end = str + len - 1;
     
-    while (1) {
+    while (1) 
+	{
         char c = *start;
         if (!u_isspace(c))
             break;
         
         start++;
-        if (start > end) {
+        if (start > end) 
+		{
             str[0] = '\0';
             return;
         }
     }
     
     
-    while (1) {
+    while (1) 
+	{
         char c = *end;
         if (!u_isspace(c))
             break;
         
         end--;
-        if (start > end) {
+        if (start > end) 
+		{
             str[0] = '\0';
             return;
         }
@@ -471,13 +468,15 @@ static void trim(char *str) {
 }
 
 
-static char *generate_token_printable_code(const UChar *buf, int32_t length) {
+static char *generate_token_printable_code(const UChar *buf, int32_t length) 
+{
     char *out = (char *) malloc(length * 5 + 1);
     char *pc = out;
     if (!out)
         return "";
     
-    while (length > 0) {
+    while (length > 0) 
+	{
         snprintf(pc, 6, "%04hX ", *buf);
         length--;
         buf++;
@@ -488,8 +487,9 @@ static char *generate_token_printable_code(const UChar *buf, int32_t length) {
 }
 
 
-#pragma mark - TEST
-void printTextRange(UChar *str, int32_t start, int32_t end) {
+// TEST
+void printTextRange(UChar *str, int32_t start, int32_t end) 
+{
     char charBuf[1000];
     UChar savedEndChar;
     savedEndChar = str[end];
@@ -501,7 +501,8 @@ void printTextRange(UChar *str, int32_t start, int32_t end) {
 }
 
 /*printer used in test*/
-void printEachForward(UBreakIterator *boundary, UChar *str) {
+void printEachForward(UBreakIterator *boundary, UChar *str) 
+{
     int32_t end;
     int32_t start = ubrk_first(boundary);
     for (end = ubrk_next(boundary);
