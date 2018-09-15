@@ -30,7 +30,7 @@ bool Database20::transaction() {
         sqlite3_free(errormessage);
     }
 
-    return (result = SQLITE_OK);
+    return (result == SQLITE_OK);
 }
 
 bool Database20::rollback() {
@@ -42,7 +42,7 @@ bool Database20::rollback() {
         sqlite3_free(errormessage);
     }
 
-    return (result = SQLITE_OK);
+    return (result == SQLITE_OK);
 }
 
 bool Database20::commit() {
@@ -54,7 +54,7 @@ bool Database20::commit() {
         sqlite3_free(errormessage);
     }
 
-    return (result = SQLITE_OK);
+    return (result == SQLITE_OK);
 }
 
 QUrl Database20::source() const {
