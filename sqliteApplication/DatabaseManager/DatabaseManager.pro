@@ -36,7 +36,7 @@ SOURCES += \
 
 HEADERS += \
         cdatabasemanager.h \
-        databasemanager_global.h 
+        databasemanager_global.h
 
 unix {
     target.path = /usr/lib
