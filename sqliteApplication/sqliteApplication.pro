@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     DatabaseManager \
-    DatabaseApplication
+    DatabaseApplication \
+    DatabaseTest

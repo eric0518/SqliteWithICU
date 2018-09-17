@@ -25,7 +25,6 @@ bool Database20::transaction() {
     char *errormessage = 0;
     int result = sqlite3_exec(m_sqliteDB, "begin;", NULL, 0, &errormessage);
     if (result != SQLITE_OK) {
-
         m_errorString = errormessage;
         sqlite3_free(errormessage);
     }
@@ -37,7 +36,6 @@ bool Database20::rollback() {
     char *errormessage = 0;
     int result = sqlite3_exec(m_sqliteDB, "rollback;", NULL, 0, &errormessage);
     if (result != SQLITE_OK) {
-
         m_errorString = errormessage;
         sqlite3_free(errormessage);
     }
@@ -49,7 +47,6 @@ bool Database20::commit() {
     char *errormessage = 0;
     int result = sqlite3_exec(m_sqliteDB, "commit;", NULL, 0, &errormessage);
     if (result != SQLITE_OK) {
-
         m_errorString = errormessage;
         sqlite3_free(errormessage);
     }
@@ -104,7 +101,6 @@ void Database20::setPassword(QString password) {
 }
 
 void Database20::setIsOpen(bool open) {
-
     if (isOpen() == open) {
         return ;
     }
@@ -119,6 +115,11 @@ void Database20::setIsOpen(bool open) {
     if (result) {
         emit isOpenChanged(isOpen());
     }
+}
+
+QString Database20::lastError()
+{
+    return m_errorString;
 }
 
 QVariant Database20::exec(QString sql, QVariantMap bindValues) {
@@ -139,14 +140,9 @@ QVariant Database20::exec(QString sql, QVariantMap bindValues) {
     int bindCount = sqlite3_bind_parameter_count(statement);
     // notice : the placeholder index is stated with 1, not 0
     for (int bindIndex=1; bindIndex<=bindCount; bindIndex++) {
-
         const char * parameterName = sqlite3_bind_parameter_name(statement, bindIndex);
-        int parameterIndex = sqlite3_bind_parameter_index(statement, parameterName);
         QVariant  parameterValue = bindValues.value(QString(parameterName));
 
-        qDebug() << "parameterName = " << QString(parameterName);
-        qDebug() << "parameterIndex = " << parameterIndex;
-        qDebug() << "parameterValue = " << parameterValue;
         bind(statement, bindIndex, parameterValue);
     }
 
@@ -154,7 +150,6 @@ QVariant Database20::exec(QString sql, QVariantMap bindValues) {
     QVariantMap record;
 
     while( (result = sqlite3_step(statement)) == SQLITE_ROW ) {
-
         record.clear();
         int cloumnCount = sqlite3_column_count(statement);
         for (int columnIndex = 0; columnIndex < cloumnCount; columnIndex ++) {
@@ -217,7 +212,7 @@ bool Database20::bind(sqlite3_stmt *statement, const int index, const QVariant v
         break;
     }
     case QVariant::String: {
-        result = sqlite3_bind_text(statement, index, value.toString().toStdString().c_str(), -1, SQLITE_STATIC);
+        result = sqlite3_bind_text(statement, index, value.toString().toStdString().c_str(), -1, SQLITE_TRANSIENT);
         qDebug() << "bind text = " << value.toString().toStdString().c_str();
         break;
     }

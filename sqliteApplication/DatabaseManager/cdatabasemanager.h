@@ -39,6 +39,9 @@ public slots:
     void setPassword(QString password);
     void setIsOpen(bool isOpen);
 
+    // added by Eric
+    QString lastError();
+
 signals:
     void sourceChanged(QUrl source);
     void passwordChanged(QString password);
